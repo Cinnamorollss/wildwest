@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wild West Frontier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4e4bc;
+            color: #3c2f2f;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #8b4513;
+            text-align: center;
+        }
+        #game-area {
+            background-color: #fff;
+            border: 2px solid #8b4513;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        button {
+            background-color: #8b4513;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, select, textarea {
+            padding: 5px;
+            font-size: 16px;
+        }
+        #error-message {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-area">
+        <!-- Game content will be dynamically loaded here -->
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
