@@ -58,7 +58,7 @@ const skillDescriptions = {
 const courses = {
     "Geology and Animal Studies": {
         cost: 50,
-        duration: 5, // days
+        duration: 5,
         skillGain: {
             husbandry: 5,
             riding: 3
@@ -66,7 +66,7 @@ const courses = {
     },
     "History": {
         cost: 40,
-        duration: 4, // days
+        duration: 4,
         skillGain: {
             mining: 4,
             knowledge: 5
@@ -76,6 +76,88 @@ const courses = {
 
 let currentCourse = null;
 let studyDaysLeft = 0;
+
+const randomEvents = {
+    weather: [
+        { description: "A sudden rainstorm soaks you to the bone.", effect: () => { gameState.money -= 1; } },
+        { description: "A beautiful sunny day lifts your spirits.", effect: () => { gameState.skills.strength += 1; } },
+        { description: "A dust storm forces you to seek shelter.", effect: () => { gameState.money -= 2; } },
+        { description: "A rainbow appears after a light shower, bringing good luck.", effect: () => { gameState.money += 3; } },
+        { description: "A chilly wind makes you shiver.", effect: () => { gameState.skills.endurance += 1; } },
+        { description: "A scorching heat wave slows down the town.", effect: () => { gameState.money -= 1; } },
+        { description: "A mild, perfect day makes everyone cheerful.", effect: () => { gameState.skills.speech += 1; } },
+        { description: "Fog rolls in, creating an eerie atmosphere.", effect: () => { gameState.skills.hunting += 1; } },
+        { description: "A light snowfall brings a touch of winter magic.", effect: () => { gameState.skills.knowledge += 1; } },
+        { description: "A windy day sends tumbleweeds rolling through town.", effect: () => { /* No effect */ } }
+    ],
+    npc: [
+        { description: "A friendly stranger shares some useful information with you.", effect: () => { gameState.skills.knowledge += 1; } },
+        { description: "You help an old man carry his groceries.", effect: () => { gameState.skills.strength += 1; } },
+        { description: "A local challenges you to a friendly shooting contest.", effect: () => { gameState.skills.shooting += 1; } },
+        { description: "A traveling salesman offers you a 'special' deal.", effect: () => { gameState.money -= 5; } },
+        { description: "You break up a bar fight, impressing the onlookers.", effect: () => { gameState.skills.influence += 2; } },
+        { description: "A mysterious stranger tells you a cryptic riddle.", effect: () => { gameState.skills.knowledge += 1; } },
+        { description: "You assist the town doctor with a patient.", effect: () => { gameState.skills.knowledge += 2; } },
+        { description: "A group of children ask you to tell them a story.", effect: () => { gameState.skills.speech += 1; } },
+        { description: "You help the sheriff track down a petty thief.", effect: () => { gameState.skills.hunting += 2; } },
+        { description: "An old prospector shares some mining tips with you.", effect: () => { gameState.skills.mining += 1; } }
+    ],
+    animal: [
+        { description: "You spot a rare bird species.", effect: () => { gameState.skills.knowledge += 1; } },
+        { description: "A stray dog follows you around town.", effect: () => { gameState.skills.husbandry += 1; } },
+        { description: "You help catch a runaway horse.", effect: () => { gameState.skills.riding += 1; } },
+        { description: "A rattlesnake crosses your path, testing your reflexes.", effect: () => { gameState.skills.aiming += 1; } },
+        { description: "You witness a beautiful butterfly emerging from its cocoon.", effect: () => { gameState.skills.knowledge += 1; } },
+        { description: "A mischievous raccoon raids the general store.", effect: () => { gameState.skills.hunting += 1; } },
+        { description: "You help a farmer deliver a calf.", effect: () => { gameState.skills.husbandry += 2; } },
+        { description: "A majestic eagle soars overhead, inspiring you.", effect: () => { gameState.skills.influence += 1; } },
+        { description: "You encounter a gentle deer in the woods.", effect: () => { gameState.skills.hunting += 1; } },
+        { description: "A playful squirrel steals your hat.", effect: () => { gameState.money -= 1; } }
+    ],
+    job: [
+        { description: "Your boss is impressed with your hard work and gives you a bonus.", effect: () => { gameState.money += 5; } },
+        { description: "A mishap at work causes some property damage.", effect: () => { gameState.money -= 3; } },
+        { description: "You learn a new trick of the trade.", effect: () => { 
+            const jobSkills = Object.keys(gameState.job.skillGain);
+            const randomSkill = jobSkills[Math.floor(Math.random() * jobSkills.length)];
+            gameState.skills[randomSkill] += 1;
+        }},
+        { description: "You work overtime and earn extra pay.", effect: () => { gameState.money += 3; } },
+        { description: "A difficult customer tests your patience.", effect: () => { gameState.skills.speech += 1; } },
+        { description: "You receive a commendation for your reliability.", effect: () => { gameState.skills.influence += 1; } },
+        { description: "A busy day at work leaves you exhausted but more experienced.", effect: () => { 
+            const jobSkills = Object.keys(gameState.job.skillGain);
+            jobSkills.forEach(skill => gameState.skills[skill] += 1);
+        }},
+        { description: "You suggest an improvement that impresses your employer.", effect: () => { gameState.money += 2; gameState.skills.knowledge += 1; } },
+        { description: "A mistake at work costs you some pay.", effect: () => { gameState.money -= 2; } },
+        { description: "You help train a new employee.", effect: () => { gameState.skills.speech += 1; gameState.skills.influence += 1; } }
+    ],
+    romantic: [
+        { description: "A pretty lady winks at you on the street.", effect: () => { gameState.skills.speech += 1; } },
+        { description: "You have a pleasant conversation with an attractive stranger at the saloon.", effect: () => { gameState.skills.speech += 1; } },
+        { description: "You receive an anonymous love letter.", effect: () => { gameState.skills.knowledge += 1; } },
+        { description: "A secret admirer leaves flowers on your doorstep.", effect: () => { gameState.skills.influence += 1; } },
+        { description: "You dance with a charming partner at a local gathering.", effect: () => { gameState.skills.influence += 1; } },
+        { description: "A potential suitor asks you for a courtship walk.", effect: () => { gameState.skills.speech += 1; } },
+        { description: "You write a heartfelt poem for someone special.", effect: () => { gameState.skills.knowledge += 1; } },
+        { description: "You receive advice on matters of the heart from a wise elder.", effect: () => { gameState.skills.knowledge += 1; } },
+        { description: "A case of mistaken identity leads to an awkward romantic encounter.", effect: () => { gameState.skills.speech += 1; } },
+        { description: "You help a couple reconcile their differences.", effect: () => { gameState.skills.influence += 2; } }
+    ],
+    misc: [
+        { description: "You find a lucky horseshoe.", effect: () => { gameState.money += 2; } },
+        { description: "A traveling circus comes to town, providing entertainment.", effect: () => { gameState.skills.knowledge += 1; } },
+        { description: "You witness a shooting star and make a wish.", effect: () => { /* No effect, just flavor */ } },
+        { description: "A town meeting discusses important local issues.", effect: () => { gameState.skills.knowledge += 1; gameState.skills.influence += 1; } },
+        { description: "You participate in a local festival.", effect: () => { gameState.skills.speech += 1; } },
+        { description: "A traveling photographer offers to take your portrait.", effect: () => { gameState.money -= 1; } },
+        { description: "You find an interesting book in the general store.", effect: () => { gameState.skills.knowledge += 2; gameState.money -= 1; } },
+        { description: "A group of travelers share stories from distant lands.", effect: () => { gameState.skills.knowledge += 2; } },
+        { description: "You help organize a community barn-raising.", effect: () => { gameState.skills.strength += 1; gameState.skills.influence += 1; } },
+        { description: "A local gold rush rumor excites the town.", effect: () => { gameState.skills.mining += 1; } }
+    ]
+};
 
 function initGame() {
     document.getElementById('game-area').innerHTML = `
@@ -171,167 +253,3 @@ function updateGameArea() {
         <button onclick="restForTheDay()">Rest for the Day</button>
         <button onclick="viewAvailableTasks()">View Available Tasks</button>
         <button onclick="study()">Study</button>
-    `;
-}
-
-function viewSkills() {
-    let skillsHTML = Object.entries(gameState.skills).map(([skill, level]) => 
-        `<li>${skill.charAt(0).toUpperCase() + skill.slice(1)}: ${level} 
-        <button onclick="showSkillInfo('${skill}')">?</button></li>`
-    ).join('');
-
-    document.getElementById('game-area').innerHTML = `
-        <h2>Your Skills</h2>
-        <ul>${skillsHTML}</ul>
-        <button onclick="updateGameArea()">Back</button>
-    `;
-}
-
-function showSkillInfo(skill) {
-    alert(`${skill.charAt(0).toUpperCase() + skill.slice(1)}: ${skillDescriptions[skill]}`);
-}
-
-function findWork() {
-    let jobListHTML = jobs.map((job, index) => 
-        `<button onclick="acceptJob(${index})">${job.title} - $${job.salary.toFixed(2)}/day</button>`
-    ).join('');
-
-    document.getElementById('game-area').innerHTML = `
-        <h2>Available Jobs</h2>
-        <p>Choose a job to start earning money:</p>
-        ${jobListHTML}
-        <button onclick="updateGameArea()">Go Back</button>
-    `;
-}
-
-function acceptJob(jobIndex) {
-    gameState.job = jobs[jobIndex];
-    alert(`You've started working as a ${gameState.job.title}!`);
-    updateGameArea();
-}
-
-function restForTheDay() {
-    if (currentCourse) {
-        continueStudying();
-    } else if (gameState.job) {
-        gameState.money += gameState.job.salary;
-        gameState.day++;
-        
-        // Increase skills based on job
-        Object.entries(gameState.job.skillGain).forEach(([skill, gain]) => {
-            gameState.skills[skill] += gain;
-        });
-        
-        alert(`You worked as a ${gameState.job.title} and earned $${gameState.job.salary.toFixed(2)}. Your skills have improved!`);
-    } else {
-        alert("You rested for the day but didn't earn any money. Find a job to start earning!");
-        gameState.day++;
-    }
-    updateGameArea();
-}
-
-function exploreCity() {
-    let exploreOptions = [
-        "You stumble upon an old book, gaining 1 Knowledge.",
-        "You help a local move some heavy crates, gaining 1 Strength.",
-        "You chat with some locals at the saloon, gaining 1 Speech.",
-        "You observe wildlife near the town, gaining 1 Hunting.",
-    ];
-    let randomEvent = exploreOptions[Math.floor(Math.random() * exploreOptions.length)];
-    alert(randomEvent);
-    
-    // Update the relevant skill
-    let skillGained = randomEvent.split("gaining 1 ")[1].split(".")[0].toLowerCase();
-    gameState.skills[skillGained]++;
-    
-    updateGameArea();
-}
-
-function viewAvailableTasks() {
-    let tasks = [
-        { name: "Help at the local farm", reward: 5, skillGain: { husbandry: 2, strength: 1 } },
-        { name: "Assist the blacksmith", reward: 7, skillGain: { smithing: 2, strength: 1 } },
-        { name: "Go on a hunting trip", reward: 10, skillGain: { hunting: 2, aiming: 1 } }
-    ];
-
-    let tasksHTML = tasks.map((task, index) => 
-        `<button onclick="completeTask(${index})">${task.name} - $${task.reward}</button>`
-    ).join('');
-
-    document.getElementById('game-area').innerHTML = `
-        <h2>Available Tasks</h2>
-        <p>Choose a task to complete:</p>
-        ${tasksHTML}
-        <button onclick="updateGameArea()">Go Back</button>
-    `;
-}
-
-function completeTask(taskIndex) {
-    let tasks = [
-        { name: "Help at the local farm", reward: 5, skillGain: { husbandry: 2, strength: 1 } },
-        { name: "Assist the blacksmith", reward: 7, skillGain: { smithing: 2, strength: 1 } },
-        { name: "Go on a hunting trip", reward: 10, skillGain: { hunting: 2, aiming: 1 } }
-    ];
-
-    let task = tasks[taskIndex];
-    gameState.money += task.reward;
-    Object.entries(task.skillGain).forEach(([skill, gain]) => {
-        gameState.skills[skill] += gain;
-    });
-
-    alert(`You completed the task: ${task.name}. You earned $${task.reward} and improved your skills!`);
-    updateGameArea();
-}
-
-function study() {
-    if (currentCourse) {
-        document.getElementById('game-area').innerHTML = `
-            <h2>Studying ${currentCourse}</h2>
-            <p>Days left: ${studyDaysLeft}</p>
-            <button onclick="continueStudying()">Continue Studying</button>
-            <button onclick="updateGameArea()">Quit Studying</button>
-        `;
-    } else {
-        let courseListHTML = Object.entries(courses).map(([courseName, courseInfo]) => 
-            `<button onclick="startCourse('${courseName}')">${courseName} - Cost: $${courseInfo.cost}, Duration: ${courseInfo.duration} days</button>`
-        ).join('');
-
-        document.getElementById('game-area').innerHTML = `
-            <h2>Available Courses</h2>
-            <p>Your money: $${gameState.money.toFixed(2)}</p>
-            ${courseListHTML}
-            <button onclick="updateGameArea()">Go Back</button>
-        `;
-    }
-}
-
-function startCourse(courseName) {
-    if (gameState.money >= courses[courseName].cost) {
-        gameState.money -= courses[courseName].cost;
-        currentCourse = courseName;
-        studyDaysLeft = courses[courseName].duration;
-        alert(`You've enrolled in ${courseName}. Your studies will take ${studyDaysLeft} days.`);
-        study();
-    } else {
-        alert("You don't have enough money for this course.");
-    }
-}
-
-function continueStudying() {
-    studyDaysLeft--;
-    gameState.day++;
-
-    if (studyDaysLeft === 0) {
-        // Course completed
-        Object.entries(courses[currentCourse].skillGain).forEach(([skill, gain]) => {
-            gameState.skills[skill] += gain;
-        });
-        alert(`Congratulations! You've completed the ${currentCourse} course and improved your skills!`);
-        currentCourse = null;
-        updateGameArea();
-    } else {
-        study();
-    }
-}
-
-window.onload = initGame;
