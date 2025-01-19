@@ -15,7 +15,8 @@ let gameState = {
         smithing: 0,
         mining: 0,
         hunting: 0,
-        husbandry: 0
+        husbandry: 0,
+        riding: 0
     }
 };
 
@@ -50,8 +51,31 @@ const skillDescriptions = {
     smithing: "Your skill in metalworking. Develop by assisting at the blacksmith or crafting items.",
     mining: "Your expertise in extracting minerals. Improve by working in mines or prospecting.",
     hunting: "Your ability to track and hunt animals. Enhance through hunting trips and wildlife observation.",
-    husbandry: "Your skill with animals. Increase by working with livestock and caring for animals."
+    husbandry: "Your skill with animals. Increase by working with livestock and caring for animals.",
+    riding: "Your proficiency in horseback riding. Improve through practice and long journeys."
 };
+
+const courses = {
+    "Geology and Animal Studies": {
+        cost: 50,
+        duration: 5, // days
+        skillGain: {
+            husbandry: 5,
+            riding: 3
+        }
+    },
+    "History": {
+        cost: 40,
+        duration: 4, // days
+        skillGain: {
+            mining: 4,
+            knowledge: 5
+        }
+    }
+};
+
+let currentCourse = null;
+let studyDaysLeft = 0;
 
 function initGame() {
     document.getElementById('game-area').innerHTML = `
@@ -146,6 +170,7 @@ function updateGameArea() {
         <button onclick="exploreCity()">Explore the City</button>
         <button onclick="restForTheDay()">Rest for the Day</button>
         <button onclick="viewAvailableTasks()">View Available Tasks</button>
+        <button onclick="study()">Study</button>
     `;
 }
 
@@ -186,7 +211,9 @@ function acceptJob(jobIndex) {
 }
 
 function restForTheDay() {
-    if (gameState.job) {
+    if (currentCourse) {
+        continueStudying();
+    } else if (gameState.job) {
         gameState.money += gameState.job.salary;
         gameState.day++;
         
@@ -254,6 +281,57 @@ function completeTask(taskIndex) {
 
     alert(`You completed the task: ${task.name}. You earned $${task.reward} and improved your skills!`);
     updateGameArea();
+}
+
+function study() {
+    if (currentCourse) {
+        document.getElementById('game-area').innerHTML = `
+            <h2>Studying ${currentCourse}</h2>
+            <p>Days left: ${studyDaysLeft}</p>
+            <button onclick="continueStudying()">Continue Studying</button>
+            <button onclick="updateGameArea()">Quit Studying</button>
+        `;
+    } else {
+        let courseListHTML = Object.entries(courses).map(([courseName, courseInfo]) => 
+            `<button onclick="startCourse('${courseName}')">${courseName} - Cost: $${courseInfo.cost}, Duration: ${courseInfo.duration} days</button>`
+        ).join('');
+
+        document.getElementById('game-area').innerHTML = `
+            <h2>Available Courses</h2>
+            <p>Your money: $${gameState.money.toFixed(2)}</p>
+            ${courseListHTML}
+            <button onclick="updateGameArea()">Go Back</button>
+        `;
+    }
+}
+
+function startCourse(courseName) {
+    if (gameState.money >= courses[courseName].cost) {
+        gameState.money -= courses[courseName].cost;
+        currentCourse = courseName;
+        studyDaysLeft = courses[courseName].duration;
+        alert(`You've enrolled in ${courseName}. Your studies will take ${studyDaysLeft} days.`);
+        study();
+    } else {
+        alert("You don't have enough money for this course.");
+    }
+}
+
+function continueStudying() {
+    studyDaysLeft--;
+    gameState.day++;
+
+    if (studyDaysLeft === 0) {
+        // Course completed
+        Object.entries(courses[currentCourse].skillGain).forEach(([skill, gain]) => {
+            gameState.skills[skill] += gain;
+        });
+        alert(`Congratulations! You've completed the ${currentCourse} course and improved your skills!`);
+        currentCourse = null;
+        updateGameArea();
+    } else {
+        study();
+    }
 }
 
 window.onload = initGame;
